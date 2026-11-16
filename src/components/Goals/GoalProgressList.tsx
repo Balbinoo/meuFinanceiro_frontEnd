@@ -18,15 +18,16 @@ export default function GoalProgressList({ goals }: GoalProgressListProps) {
     );
   }
 
+  //tirei o goals id
   return (
     <Stack gap="lg">
-      {goals.map((goal) => {
+      {goals.map((goal, index) => {
         const saved = Number(goal.saved);
         const objective = Number(goal.objective);
         const percentage = goalPercentage(saved, objective);
 
         return (
-          <Stack key={goal.id} gap={5}>
+          <Stack key={`${goal.name}-${index}`} gap={5}>
             <Group gap="md">
               <Group
                 bg="#EAF3ED"

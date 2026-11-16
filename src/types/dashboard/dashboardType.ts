@@ -23,8 +23,8 @@ export interface ExpenseCategoryResponse {
 
 export interface MonthlySummaryResponse {
   label: string;
-  Income: number;
-  Expenses: number;
+  income: number;
+  expense: number;
 }
 
 export interface RecentTransactionResponse {
@@ -32,12 +32,11 @@ export interface RecentTransactionResponse {
   type: "income" | "expense";
   description: string;
   category: string;
-  amount: string;
+  amount: number;
   date: string;
 }
 
 export interface GoalsResponse {
-  id: number;
   name: string;
   saved: number;
   objective: number;

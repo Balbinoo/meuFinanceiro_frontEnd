@@ -1,11 +1,12 @@
 import { Table, Text, Stack } from "@mantine/core";
+import { formatCurrency } from "../../../utils/formatCurrency";
 
 interface Transaction {
   id: number;
   type: "income" | "expense";
   description: string;
   category: string;
-  amount: string;
+  amount: number;
   date: string;
 }
 
@@ -19,13 +20,6 @@ const TableChart = ({ transactions }: TableChartProps) => {
       month: "short",
       day: "2-digit",
       year: "numeric",
-    });
-  };
-
-  const formatCurrency = (amount: string) => {
-    return Number(amount).toLocaleString("pt-BR", {
-      style: "currency",
-      currency: "BRL",
     });
   };
 

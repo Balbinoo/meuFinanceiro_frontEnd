@@ -7,23 +7,10 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-/*const data = [
-  { label: "05", Income: 400, Expenses: 240 },
-  { label: "06", Income: 300, Expenses: 139 },
-  { label: "07", Income: 200, Expenses: 980 },
-  { label: "08", Income: 278, Expenses: 390 },
-  { label: "09", Income: 189, Expenses: 480 },
-  { label: "10", Income: 239, Expenses: 380 },
-];*/
-
-export interface MonthlySummary {
-  label: string;
-  Income: number;
-  Expenses: number;
-}
+import type { MonthlySummaryResponse } from "../../../types/dashboard/dashboardType";
 
 interface SimpleBarChartProps {
-  chartData: MonthlySummary[];
+  chartData: MonthlySummaryResponse[];
 }
 
 const SimpleBarChart = ({ chartData }: SimpleBarChartProps) => {
