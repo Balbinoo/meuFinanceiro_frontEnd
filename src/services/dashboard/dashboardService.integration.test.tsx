@@ -19,7 +19,6 @@ import {
 } from "./dashboardService";
 import { afterEach } from "node:test";
 
-// Simula somente o sessionStorage para o interceptor
 const storage = new Map<string, string>();
 
 vi.stubGlobal("sessionStorage", {
@@ -35,15 +34,6 @@ beforeEach(async () => {
   });
 
   sessionStorage.setItem("access_token", response.data.access);
-});
-
-beforeEach(async () => {
-  const response = await api.post("/api/token/", {
-    username: process.env.TEST_USERNAME2,
-    password: process.env.TEST_PASSWORD2,
-  });
-
-  sessionStorage.setItem("access_token2", response.data.access);
 });
 
 afterEach(() => {
