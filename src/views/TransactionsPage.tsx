@@ -1,6 +1,9 @@
-import { Button, Divider, Group, Pagination } from "@mantine/core";
 import { Page } from "../layout/Page";
+import { useState, useEffect } from "react";
 import {
+  Divider,
+  Group,
+  Pagination,
   Card,
   Tabs,
   Stack,
@@ -10,11 +13,45 @@ import {
   Autocomplete,
   Select,
   MultiSelect,
+  Button,
+  ComboboxPopover,
 } from "@mantine/core";
+import { getAllTransactions } from "../services/transactions/transactionsService";
+import type { Transaction } from "../types/transactions/transactionsType";
 import { CalendarDays, Download, Plus } from "lucide-react";
-import TableChart2 from "../components/Table/TableChart2";
+import AllTransactionsTable from "../components/Table/transactions/AllTransactionsTable";
 
 const TransactionsPage = () => {
+  const [value, setValue] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    async function fetchTransactionsData() {
+      setLoading(true);
+      try {
+        const response = await getAllTransactions(currentPage);
+        setAllTransactions(response.results);
+        setTotalTransactions(response.count);
+
+        console.log("Transactions:", response.results);
+        console.log("Total:", response.count);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTransactionsData();
+  }, [currentPage]);
+
+  useEffect(() => {
+    console.log("All transactions:", allTransactions);
+  }, [allTransactions]);
+
   return (
     <Page>
       <Stack gap="xl" maw={1100} mx="auto">
@@ -29,14 +66,22 @@ const TransactionsPage = () => {
 
           {/* Right side */}
           <Group gap="sm">
-            <Button
-              variant="default"
-              size="sm"
-              leftSection={<CalendarDays size={14} />}
+            <ComboboxPopover
+              data={["React", "Angular", "Vue", "Svelte"]}
+              value={value}
+              onChange={setValue}
+              multiple
             >
-              October 2026
-            </Button>
-
+              <ComboboxPopover.Target>
+                <Button
+                  variant="default"
+                  size="sm"
+                  leftSection={<CalendarDays size={14} />}
+                >
+                  {value.length > 0 ? value.join(", ") : "Select frameworks"}
+                </Button>
+              </ComboboxPopover.Target>
+            </ComboboxPopover>
             <Button size="sm" bg="#20765B" leftSection={<Plus size={14} />}>
               Add transaction
             </Button>
@@ -122,7 +167,7 @@ const TransactionsPage = () => {
 
           <SimpleGrid mb={10} mt={25} cols={{ base: 1, sm: 5 }}>
             <Autocomplete
-              placeholder="Search merchantor description"
+              placeholder="Search"
               data={["Foods", "transport", "Mc", "amazon"]}
             />
 
@@ -158,14 +203,21 @@ const TransactionsPage = () => {
             />
           </SimpleGrid>
 
-          <TableChart2 />
+          <AllTransactionsTable data={allTransactions} />
+
           <Divider />
+
           <Group mt={30} justify="space-between" align="center">
             <Text c="dimmed" size="xs">
-              Showing 1–10 of 48 transactions
+              Showing {totalTransactions === 0 ? 0 : (currentPage - 1) * 10 + 1}
+              –{Math.min(currentPage * 10, totalTransactions)} of{" "}
+              {totalTransactions} transactions
             </Text>
+
             <Pagination
-              total={5}
+              total={Math.ceil(totalTransactions / 10)}
+              value={currentPage}
+              onChange={setCurrentPage}
               color="#EAF3ED"
               styles={{ control: { color: "#20765B" } }}
             />
