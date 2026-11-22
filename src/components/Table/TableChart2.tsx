@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Group, Text, Table, Checkbox, Stack, Badge } from "@mantine/core";
+import { Badge, Checkbox, Group, Stack, Table, Text } from "@mantine/core";
 import {
   IconBook,
   IconBriefcase,
@@ -7,14 +7,24 @@ import {
   IconCar,
   IconDeviceLaptop,
   IconHome,
-  IconLetterV,
   IconMug,
   IconMusic,
 } from "@tabler/icons-react";
 import { ShoppingBasket } from "lucide-react";
+import type { ReactNode } from "react";
 
-const elements = [
+interface Transaction {
+  id: number | string;
+  merchant: ReactNode;
+  date: string;
+  category: ReactNode;
+  account: string;
+  amount: ReactNode;
+}
+
+const elements: Transaction[] = [
   {
+    id: 1,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <ShoppingBasket size={16} color="black" />
@@ -36,6 +46,7 @@ const elements = [
     amount: "-R$86.40",
   },
   {
+    id: 2,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconBriefcase size={16} color="black" />
@@ -61,6 +72,7 @@ const elements = [
     ),
   },
   {
+    id: 3,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconMug size={16} color="black" />
@@ -82,6 +94,7 @@ const elements = [
     amount: "-R$12.50",
   },
   {
+    id: 4,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconBriefcase2 size={16} color="black" />
@@ -103,6 +116,7 @@ const elements = [
     amount: "-R$124.00",
   },
   {
+    id: 5,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconMusic size={16} color="black" />
@@ -124,6 +138,7 @@ const elements = [
     amount: "-R$10.99",
   },
   {
+    id: 6,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconCar size={16} color="black" />
@@ -145,6 +160,7 @@ const elements = [
     amount: "-R$24.80",
   },
   {
+    id: 7,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconDeviceLaptop size={16} color="black" />
@@ -159,7 +175,7 @@ const elements = [
     date: "Oct 19, 2026",
     category: (
       <Badge bg="#EAF3ED" c="#20765B">
-        "Freelance"
+        Freelance
       </Badge>
     ),
     account: "account 1",
@@ -170,6 +186,7 @@ const elements = [
     ),
   },
   {
+    id: 8,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconHome size={16} color="black" />
@@ -191,11 +208,12 @@ const elements = [
     amount: "-R$1,400.00",
   },
   {
+    id: 9,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <ShoppingBasket size={16} color="black" />
         <Stack gap={4} align="flex-start">
-          <Text size="xs">Trader Joe's</Text>
+          <Text size="xs">Trader Joe&apos;s</Text>
           <Text c="dimmed" size="xs">
             Weekly groceries
           </Text>
@@ -212,6 +230,7 @@ const elements = [
     amount: "-R$62.35",
   },
   {
+    id: 10,
     merchant: (
       <Group gap="sm" align="center" w="100%">
         <IconBook size={16} color="black" />
@@ -234,14 +253,34 @@ const elements = [
   },
 ];
 
-const TableChart2 = () => {
-  const [selectedRows, setSelectedRows] = useState<string[]>([]);
+interface TableChart2Props {
+  data?: Transaction[];
+}
 
-  const rows = elements.map((element) => (
+const TableChart2 = ({ data = elements }: TableChart2Props) => {
+  const [selectedRows, setSelectedRows] = useState<(number | string)[]>([]);
+
+  const handleSelectRow = (id: number | string, checked: boolean) => {
+    setSelectedRows((current) =>
+      checked
+        ? [...current, id]
+        : current.filter((selectedId) => selectedId !== id),
+    );
+  };
+
+  const allSelected =
+    data.length > 0 &&
+    data.every((element) => selectedRows.includes(element.id));
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedRows(checked ? data.map((element) => element.id) : []);
+  };
+
+  const rows = data.map((element) => (
     <Table.Tr
-      key={element.account}
+      key={element.id}
       bg={
-        selectedRows.includes(element.merchant)
+        selectedRows.includes(element.id)
           ? "var(--mantine-color-blue-light)"
           : undefined
       }
@@ -249,18 +288,13 @@ const TableChart2 = () => {
       <Table.Td>
         <Checkbox
           aria-label="Select row"
-          checked={selectedRows.includes(element.merchant)}
+          checked={selectedRows.includes(element.id)}
           onChange={(event) =>
-            setSelectedRows(
-              event.currentTarget.checked
-                ? [...selectedRows, element.merchant]
-                : selectedRows.filter(
-                    (merchant) => merchant !== element.merchant,
-                  ),
-            )
+            handleSelectRow(element.id, event.currentTarget.checked)
           }
         />
       </Table.Td>
+
       <Table.Td>{element.merchant}</Table.Td>
       <Table.Td>{element.date}</Table.Td>
       <Table.Td>{element.category}</Table.Td>
@@ -280,7 +314,14 @@ const TableChart2 = () => {
     >
       <Table.Thead>
         <Table.Tr>
-          <Table.Th />
+          <Table.Th>
+            <Checkbox
+              aria-label="Select all rows"
+              checked={allSelected}
+              indeterminate={selectedRows.length > 0 && !allSelected}
+              onChange={(event) => handleSelectAll(event.currentTarget.checked)}
+            />
+          </Table.Th>
           <Table.Th>Merchant/description</Table.Th>
           <Table.Th>Date</Table.Th>
           <Table.Th>Category</Table.Th>
@@ -288,6 +329,7 @@ const TableChart2 = () => {
           <Table.Th>Amount</Table.Th>
         </Table.Tr>
       </Table.Thead>
+
       <Table.Tbody>{rows}</Table.Tbody>
     </Table>
   );

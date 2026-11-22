@@ -1,18 +1,5 @@
-import { Badge, Group, Stack, Table, Text } from "@mantine/core";
-import {
-  IconBolt,
-  IconBriefcase,
-  IconCar,
-  IconClockHour3,
-  IconDeviceLaptop,
-  IconDroplet,
-  IconLetterF,
-  IconLetterS,
-  IconLetterSSmall,
-  IconLetterV,
-  IconPercentage,
-} from "@tabler/icons-react";
-import { House, ShoppingBag, ShoppingBasket } from "lucide-react";
+import { Group, Stack, Table, Text } from "@mantine/core";
+import { IconLetterF, IconLetterS, IconLetterV } from "@tabler/icons-react";
 
 const elements = [
   {

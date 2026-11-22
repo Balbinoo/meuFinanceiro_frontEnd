@@ -36,8 +36,8 @@ const SimpleBarChart = ({ chartData }: SimpleBarChartProps) => {
       <YAxis width="auto" />
       <Tooltip />
       <Legend />
-      <Bar fill="#20765B" dataKey="Income" radius={[10, 10, 0, 0]} />
-      <Bar fill="#D7C8A8" dataKey="Expenses" radius={[10, 10, 0, 0]} />
+      <Bar fill="#20765B" dataKey="income" radius={[10, 10, 0, 0]} />
+      <Bar fill="#D7C8A8" dataKey="expense" radius={[10, 10, 0, 0]} />
     </BarChart>
   );
 };

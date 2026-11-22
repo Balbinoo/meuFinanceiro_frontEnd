@@ -16,7 +16,7 @@ import {
 import { Page } from "../layout/Page";
 import { CalendarDays, Download, Plus, Search, Sparkles } from "lucide-react";
 import { IconBuildingBank } from "@tabler/icons-react";
-import ApexChart from "../components/Graphs/ApexChart";
+import ApexChartEconomy from "../components/Graphs/economy/ApexChartEconomy";
 import TableChart3 from "../components/Table/TableChart3";
 import TableChart2 from "../components/Table/TableChart2";
 
@@ -158,8 +158,7 @@ const EconomyPage = () => {
             </Title>
             <Text size="xs"> Spending from Everyday checking · Oct 1-23</Text>
           </Stack>
-          <ApexChart />
-
+          <ApexChartEconomy />
           <Group justify="flex-start" align="center" gap="sm" wrap="nowrap">
             <Text
               bg="#EAF3ED"
