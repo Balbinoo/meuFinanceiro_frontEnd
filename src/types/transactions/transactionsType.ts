@@ -14,3 +14,15 @@ export interface getAllTransactionsResponse {
   previous: string | null;
   results: Transaction[];
 }
+
+export interface accountsListResponse {
+  accounts_list: string[];
+}
+
+export interface monthsListResponse {
+  last_five_months: string[];
+}
+
+export interface categoriesListResponse {
+  categories_list: string[];
+}

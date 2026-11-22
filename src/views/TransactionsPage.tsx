@@ -16,8 +16,16 @@ import {
   Button,
   ComboboxPopover,
 } from "@mantine/core";
-import { getAllTransactions } from "../services/transactions/transactionsService";
-import type { Transaction } from "../types/transactions/transactionsType";
+import {
+  getAllTransactions,
+  get_accounts_list,
+  get_categories,
+  get_five_months_list,
+} from "../services/transactions/transactionsService";
+import type {
+  accountsListResponse,
+  Transaction,
+} from "../types/transactions/transactionsType";
 import { CalendarDays, Download, Plus } from "lucide-react";
 import AllTransactionsTable from "../components/Table/transactions/AllTransactionsTable";
 
@@ -26,18 +34,29 @@ const TransactionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [totalTransactions, setTotalTransactions] = useState(0);
+  const [accountsList, setAccountsList] = useState<string[]>([]);
+  const [monthsList, setMonthsList] = useState<string[]>([]);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     async function fetchTransactionsData() {
       setLoading(true);
       try {
-        const response = await getAllTransactions(currentPage);
-        setAllTransactions(response.results);
-        setTotalTransactions(response.count);
+        const [transactions, accounts, months, categories] = await Promise.all([
+          getAllTransactions(currentPage),
+          get_accounts_list(),
+          get_five_months_list(),
+          get_categories(),
+        ]);
+        console.log("Resposta completa das contas:", accounts);
+        console.log("Array de contas:", accounts);
 
-        console.log("Transactions:", response.results);
-        console.log("Total:", response.count);
+        setCategoriesList(categories.categories_list);
+        setMonthsList(months.last_five_months);
+        setAccountsList(accounts.accounts_list);
+        setAllTransactions(transactions.results);
+        setTotalTransactions(transactions.count);
       } catch (error) {
         console.error("Error fetching transactions:", error);
       } finally {
@@ -50,7 +69,8 @@ const TransactionsPage = () => {
 
   useEffect(() => {
     console.log("All transactions:", allTransactions);
-  }, [allTransactions]);
+    console.log("Accounts:", accountsList);
+  }, [allTransactions, accountsList]);
 
   return (
     <Page>
@@ -67,7 +87,7 @@ const TransactionsPage = () => {
           {/* Right side */}
           <Group gap="sm">
             <ComboboxPopover
-              data={["React", "Angular", "Vue", "Svelte"]}
+              data={monthsList}
               value={value}
               onChange={setValue}
               multiple
@@ -78,7 +98,7 @@ const TransactionsPage = () => {
                   size="sm"
                   leftSection={<CalendarDays size={14} />}
                 >
-                  {value.length > 0 ? value.join(", ") : "Select frameworks"}
+                  {value.length > 0 ? value.join(", ") : "November"}
                 </Button>
               </ComboboxPopover.Target>
             </ComboboxPopover>
@@ -170,32 +190,15 @@ const TransactionsPage = () => {
               placeholder="Search"
               data={["Foods", "transport", "Mc", "amazon"]}
             />
+            <Select placeholder="Categories" data={categoriesList} />
 
             <Select
-              placeholder="All categories"
-              data={[
-                "Food & groiceries",
-                "Salary",
-                "Shoppimg",
-                "Lifestyle",
-                "Transport",
-              ]}
+              placeholder="Accounts"
+              data={accountsList}
+              nothingFoundMessage="No accounts found"
             />
 
-            <Select
-              placeholder="All accounts"
-              data={["account 1", "account 2", "account 3", "account 4"]}
-            />
-
-            <Select
-              placeholder="Oct 1 - Oct 23"
-              data={[
-                "Set 1 - Set 30",
-                "Ago 1 - Ago 30",
-                "Jul 1 - Jul 30",
-                "Jun 1 - Jun 30",
-              ]}
-            />
+            <Select placeholder="Period" data={monthsList} />
 
             <MultiSelect
               placeholder="Filter"
