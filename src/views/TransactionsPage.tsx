@@ -42,6 +42,7 @@ const TransactionsPage = () => {
   const [search, setSearch] = useState("");
   const [ordering, setOrdering] = useState<string>("newest");
   const [selectedType, setSelectedType] = useState("all");
+  const [selectedMultiPeriod, setSelectedMultiPeriod] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchFilterData() {
@@ -78,6 +79,7 @@ const TransactionsPage = () => {
           search,
           ordering,
           selectedType,
+          selectedMultiPeriod,
         );
         setAllTransactions(transactions.results);
         setTotalTransactions(transactions.count);
@@ -96,6 +98,7 @@ const TransactionsPage = () => {
     search,
     ordering,
     selectedType,
+    selectedMultiPeriod,
   ]);
 
   useEffect(() => {
@@ -119,8 +122,11 @@ const TransactionsPage = () => {
           <Group gap="sm">
             <ComboboxPopover
               data={monthsList}
-              value={value}
-              onChange={setValue}
+              value={selectedMultiPeriod}
+              onChange={(values: string[]) => {
+                setSelectedMultiPeriod(values);
+                setCurrentPage(1);
+              }}
               multiple
             >
               <ComboboxPopover.Target>
@@ -129,7 +135,9 @@ const TransactionsPage = () => {
                   size="sm"
                   leftSection={<CalendarDays size={14} />}
                 >
-                  {value.length > 0 ? value.join(", ") : "November"}
+                  {selectedMultiPeriod.length > 0
+                    ? selectedMultiPeriod.join(",")
+                    : "All Periods"}{" "}
                 </Button>
               </ComboboxPopover.Target>
             </ComboboxPopover>
