@@ -12,6 +12,9 @@ export const getAllTransactions = async (
   category?: string | null,
   account?: string | null,
   period?: string | null,
+  search?: string,
+  ordering?: string,
+  transaction_type?: string,
 ): Promise<getAllTransactionsResponse> => {
   const response = await api.get<getAllTransactionsResponse>(
     "/api/transactions/all/",
@@ -21,6 +24,10 @@ export const getAllTransactions = async (
         category: category || undefined,
         account: account || undefined,
         period: period || undefined,
+        search: search || undefined,
+        ordering: ordering || undefined,
+        transaction_type:
+          transaction_type === "all" ? undefined : transaction_type,
       },
     },
   );

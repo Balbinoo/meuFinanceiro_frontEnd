@@ -39,6 +39,9 @@ const TransactionsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [ordering, setOrdering] = useState<string>("newest");
+  const [selectedType, setSelectedType] = useState("all");
 
   useEffect(() => {
     async function fetchFilterData() {
@@ -72,6 +75,9 @@ const TransactionsPage = () => {
           selectedCategory,
           selectedAccount,
           selectedPeriod,
+          search,
+          ordering,
+          selectedType,
         );
         setAllTransactions(transactions.results);
         setTotalTransactions(transactions.count);
@@ -82,7 +88,15 @@ const TransactionsPage = () => {
       }
     }
     fetchTransactions();
-  }, [currentPage, selectedCategory, selectedAccount, selectedPeriod]);
+  }, [
+    currentPage,
+    selectedCategory,
+    selectedAccount,
+    selectedPeriod,
+    search,
+    ordering,
+    selectedType,
+  ]);
 
   useEffect(() => {
     console.log("All transactions:", allTransactions);
@@ -171,27 +185,42 @@ const TransactionsPage = () => {
 
         <Card withBorder radius="md" padding="lg">
           <Group justify="space-between" align="center" w="100%">
-            <Tabs defaultValue="transactions">
+            <Tabs
+              value={selectedType}
+              onChange={(value) => {
+                setSelectedType(value || "all");
+                setCurrentPage(1);
+              }}
+              color="#20765B"
+            >
               <Tabs.List>
-                <Tabs.Tab value="transactions" rightSection="45">
+                <Tabs.Tab
+                  value="all"
+                  rightSection={
+                    selectedType === "all" ? totalTransactions : null
+                  }
+                >
                   All transactions
                 </Tabs.Tab>
 
-                <Tabs.Tab value="Income" rightSection="2">
+                <Tabs.Tab
+                  value="income"
+                  rightSection={
+                    selectedType === "income" ? totalTransactions : null
+                  }
+                >
                   Income
                 </Tabs.Tab>
 
-                <Tabs.Tab value="Expenses" rightSection="46">
+                <Tabs.Tab
+                  value="expense"
+                  rightSection={
+                    selectedType === "expense" ? totalTransactions : null
+                  }
+                >
                   Expenses
                 </Tabs.Tab>
               </Tabs.List>
-              {/*
-            <Tabs.Panel value="Income">Income tab filter</Tabs.Panel>
-            <Tabs.Panel value="transactions">
-              Transactions tab filter
-            </Tabs.Panel>
-            <Tabs.Panel value="Expenses">Expenses tab filter</Tabs.Panel>
-            */}
             </Tabs>
             <Button
               variant="default"
@@ -205,7 +234,12 @@ const TransactionsPage = () => {
           <SimpleGrid mb={10} mt={25} cols={{ base: 1, sm: 5 }}>
             <Autocomplete
               placeholder="Search"
-              data={["Foods", "transport", "Mc", "amazon"]}
+              data={[]}
+              value={search}
+              onChange={(value) => {
+                setSearch(value);
+                setCurrentPage(1);
+              }}
             />
             <Select
               placeholder="Categories"
@@ -241,9 +275,19 @@ const TransactionsPage = () => {
               clearable
             />
 
-            <MultiSelect
-              placeholder="Filter"
-              data={["Newest", "Oldest", "↑ Price", "↓ Price"]}
+            <Select
+              placeholder="Sort by"
+              data={[
+                { value: "newest", label: "Newest" },
+                { value: "oldest", label: "Oldest" },
+                { value: "↑ Price", label: "↑ Price" },
+                { value: "↓ Price", label: "↓ Price" },
+              ]}
+              value={ordering}
+              onChange={(value) => {
+                setOrdering(value || "newest");
+                setCurrentPage(1);
+              }}
             />
           </SimpleGrid>
 
