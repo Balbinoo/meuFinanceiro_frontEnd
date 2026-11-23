@@ -4,7 +4,7 @@ export interface Transaction {
   description: string;
   category: string;
   date: string;
-  account_id: number;
+  account_name: string;
   amount: string;
 }
 

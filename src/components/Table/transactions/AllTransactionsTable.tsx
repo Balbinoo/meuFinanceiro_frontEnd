@@ -54,7 +54,7 @@ const AllTransactionsTable = ({ data }: AllTransactionsTableProps) => {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
 
   const getRowKey = (transaction: Transaction) =>
-    `${transaction.transaction_type}-${transaction.date}-${transaction.account_id}-${transaction.description}`;
+    `${transaction.transaction_type}-${transaction.date}-${transaction.account_name}-${transaction.description}`;
 
   const handleSelectRow = (key: string, checked: boolean) => {
     setSelectedRows((current) =>
@@ -126,7 +126,7 @@ const AllTransactionsTable = ({ data }: AllTransactionsTableProps) => {
         </Table.Td>
 
         <Table.Td>
-          <Text size="sm">Conta {transaction.account_id}</Text>
+          <Text size="sm">{transaction.account_name}</Text>
         </Table.Td>
 
         <Table.Td>

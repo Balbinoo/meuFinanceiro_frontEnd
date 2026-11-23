@@ -22,15 +22,12 @@ import {
   get_categories,
   get_five_months_list,
 } from "../services/transactions/transactionsService";
-import type {
-  accountsListResponse,
-  Transaction,
-} from "../types/transactions/transactionsType";
+import type { Transaction } from "../types/transactions/transactionsType";
 import { CalendarDays, Download, Plus } from "lucide-react";
 import AllTransactionsTable from "../components/Table/transactions/AllTransactionsTable";
 
 const TransactionsPage = () => {
-  const [value, setValue] = useState<string[]>([]);
+  const [value, setValue] = useState<string[]>(["All Period"]);
   const [loading, setLoading] = useState(true);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [totalTransactions, setTotalTransactions] = useState(0);
@@ -39,22 +36,43 @@ const TransactionsPage = () => {
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+
   useEffect(() => {
-    async function fetchTransactionsData() {
+    async function fetchFilterData() {
       setLoading(true);
       try {
-        const [transactions, accounts, months, categories] = await Promise.all([
-          getAllTransactions(currentPage),
+        const [accounts, months, categories] = await Promise.all([
           get_accounts_list(),
           get_five_months_list(),
           get_categories(),
         ]);
-        console.log("Resposta completa das contas:", accounts);
-        console.log("Array de contas:", accounts);
-
         setCategoriesList(categories.categories_list);
         setMonthsList(months.last_five_months);
         setAccountsList(accounts.accounts_list);
+      } catch (error) {
+        console.error("Error fetching filter data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFilterData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchTransactions() {
+      setLoading(true);
+
+      try {
+        const transactions = await getAllTransactions(
+          currentPage,
+          selectedCategory,
+          selectedAccount,
+          selectedPeriod,
+        );
         setAllTransactions(transactions.results);
         setTotalTransactions(transactions.count);
       } catch (error) {
@@ -63,9 +81,8 @@ const TransactionsPage = () => {
         setLoading(false);
       }
     }
-
-    fetchTransactionsData();
-  }, [currentPage]);
+    fetchTransactions();
+  }, [currentPage, selectedCategory, selectedAccount, selectedPeriod]);
 
   useEffect(() => {
     console.log("All transactions:", allTransactions);
@@ -190,15 +207,39 @@ const TransactionsPage = () => {
               placeholder="Search"
               data={["Foods", "transport", "Mc", "amazon"]}
             />
-            <Select placeholder="Categories" data={categoriesList} />
+            <Select
+              placeholder="Categories"
+              data={categoriesList}
+              value={selectedCategory}
+              onChange={(value) => {
+                setSelectedCategory(value);
+                setCurrentPage(1);
+              }}
+              clearable
+            />
 
             <Select
               placeholder="Accounts"
               data={accountsList}
+              value={selectedAccount}
+              onChange={(value) => {
+                setSelectedAccount(value);
+                setCurrentPage(1);
+              }}
+              clearable
               nothingFoundMessage="No accounts found"
             />
 
-            <Select placeholder="Period" data={monthsList} />
+            <Select
+              placeholder="Period"
+              data={monthsList}
+              value={selectedPeriod}
+              onChange={(value) => {
+                setSelectedPeriod(value);
+                setCurrentPage(1);
+              }}
+              clearable
+            />
 
             <MultiSelect
               placeholder="Filter"

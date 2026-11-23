@@ -9,9 +9,20 @@ import { api } from "../api";
 
 export const getAllTransactions = async (
   page: number = 1,
+  category?: string | null,
+  account?: string | null,
+  period?: string | null,
 ): Promise<getAllTransactionsResponse> => {
   const response = await api.get<getAllTransactionsResponse>(
-    `/api/transactions/all/?page=${page}`,
+    "/api/transactions/all/",
+    {
+      params: {
+        page,
+        category: category || undefined,
+        account: account || undefined,
+        period: period || undefined,
+      },
+    },
   );
 
   return response.data;
