@@ -26,3 +26,13 @@ export interface monthsListResponse {
 export interface categoriesListResponse {
   categories_list: string[];
 }
+
+export interface incomeFilteredResponse {
+  total_income: string;
+  counted: number;
+}
+
+export interface expenseFilteredResponse {
+  total_expense: string;
+  counted: number;
+}

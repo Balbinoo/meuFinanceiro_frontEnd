@@ -12,7 +12,6 @@ import {
   SimpleGrid,
   Autocomplete,
   Select,
-  MultiSelect,
   Button,
   ComboboxPopover,
 } from "@mantine/core";
@@ -20,14 +19,21 @@ import {
   getAllTransactions,
   get_accounts_list,
   get_categories,
+  get_expense_filtered,
   get_five_months_list,
+  get_income_filtered,
 } from "../services/transactions/transactionsService";
-import type { Transaction } from "../types/transactions/transactionsType";
+import type {
+  expenseFilteredResponse,
+  incomeFilteredResponse,
+  Transaction,
+} from "../types/transactions/transactionsType";
 import { CalendarDays, Download, Plus } from "lucide-react";
 import AllTransactionsTable from "../components/Table/transactions/AllTransactionsTable";
+import { formatCurrency } from "../utils/formatCurrency";
+import { calculateNetSaving, percentageNetSaving } from "../utils/netSavings";
 
 const TransactionsPage = () => {
-  const [value, setValue] = useState<string[]>(["All Period"]);
   const [loading, setLoading] = useState(true);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [totalTransactions, setTotalTransactions] = useState(0);
@@ -35,6 +41,10 @@ const TransactionsPage = () => {
   const [monthsList, setMonthsList] = useState<string[]>([]);
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [incomeFiltered, setIncomeFiltered] =
+    useState<incomeFilteredResponse>();
+  const [expenseFiltered, setExpenseFiltered] =
+    useState<expenseFilteredResponse>();
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -48,14 +58,19 @@ const TransactionsPage = () => {
     async function fetchFilterData() {
       setLoading(true);
       try {
-        const [accounts, months, categories] = await Promise.all([
-          get_accounts_list(),
-          get_five_months_list(),
-          get_categories(),
-        ]);
+        const [accounts, months, categories, income, expense] =
+          await Promise.all([
+            get_accounts_list(),
+            get_five_months_list(),
+            get_categories(),
+            get_income_filtered(selectedMultiPeriod),
+            get_expense_filtered(selectedMultiPeriod),
+          ]);
         setCategoriesList(categories.categories_list);
         setMonthsList(months.last_five_months);
         setAccountsList(accounts.accounts_list);
+        setIncomeFiltered(income);
+        setExpenseFiltered(expense);
       } catch (error) {
         console.error("Error fetching filter data:", error);
       } finally {
@@ -64,7 +79,7 @@ const TransactionsPage = () => {
     }
 
     fetchFilterData();
-  }, []);
+  }, [incomeFiltered, expenseFiltered]);
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -137,7 +152,7 @@ const TransactionsPage = () => {
                 >
                   {selectedMultiPeriod.length > 0
                     ? selectedMultiPeriod.join(",")
-                    : "All Periods"}{" "}
+                    : "All Periods"}
                 </Button>
               </ComboboxPopover.Target>
             </ComboboxPopover>
@@ -154,10 +169,10 @@ const TransactionsPage = () => {
                 Money in
               </Text>
               <Title order={2} mt="sm">
-                R$ 6,800.00
+                {formatCurrency(incomeFiltered?.total_income || 0)}
               </Title>
               <Text c={"dimmed"} size="xs" mt="md">
-                2 income transactions this month
+                {incomeFiltered?.counted || "Multiple"} income transactions
               </Text>
             </Stack>
           </Card>
@@ -168,10 +183,10 @@ const TransactionsPage = () => {
                 Money out
               </Text>
               <Title order={2} mt="sm">
-                R$ 3,240.00
+                {formatCurrency(expenseFiltered?.total_expense || 0)}
               </Title>
               <Text c={"dimmed"} size="xs" mt="md">
-                46 expense transactions this month
+                {expenseFiltered?.counted || "Multiple"} expense transactions
               </Text>
             </Stack>
           </Card>
@@ -182,10 +197,19 @@ const TransactionsPage = () => {
                 Net cash flow
               </Text>
               <Title c={"white"} order={2} mt="sm">
-                +R$ 3,560.00
+                {calculateNetSaving(
+                  Number(incomeFiltered?.total_income),
+                  Number(expenseFiltered?.total_expense),
+                )}
               </Title>
               <Text c={"white"} size="xs" mt="md">
-                2 income transactions this month
+                {Number(incomeFiltered?.total_income) === 0
+                  ? 0
+                  : percentageNetSaving(
+                      Number(incomeFiltered?.total_income),
+                      Number(expenseFiltered?.total_expense),
+                    )}
+                % of this month's income
               </Text>
             </Stack>
           </Card>

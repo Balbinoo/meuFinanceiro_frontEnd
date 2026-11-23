@@ -1,7 +1,9 @@
 import type {
   accountsListResponse,
   categoriesListResponse,
+  expenseFilteredResponse,
   getAllTransactionsResponse,
+  incomeFilteredResponse,
   monthsListResponse,
 } from "../../types/transactions/transactionsType";
 
@@ -55,6 +57,34 @@ export const get_five_months_list = async (): Promise<monthsListResponse> => {
 export const get_categories = async (): Promise<categoriesListResponse> => {
   const response = await api.get<categoriesListResponse>(
     `/api/transactions/all_categories/`,
+  );
+  return response.data;
+};
+
+export const get_income_filtered = async (
+  periods?: string[],
+): Promise<incomeFilteredResponse> => {
+  const response = await api.get<incomeFilteredResponse>(
+    "/api/transactions/income_filtered/",
+    {
+      params: {
+        periods: periods?.length ? periods.join(",") : undefined,
+      },
+    },
+  );
+  return response.data;
+};
+
+export const get_expense_filtered = async (
+  periods?: string[],
+): Promise<expenseFilteredResponse> => {
+  const response = await api.get<expenseFilteredResponse>(
+    "/api/transactions/expense_filtered/",
+    {
+      params: {
+        periods: periods?.length ? periods.join(",") : undefined,
+      },
+    },
   );
   return response.data;
 };
