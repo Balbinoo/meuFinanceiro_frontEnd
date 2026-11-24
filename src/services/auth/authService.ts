@@ -10,6 +10,9 @@ export async function login(
     password,
   });
 
+  sessionStorage.setItem("access_token", response.data.access);
+  sessionStorage.setItem("refresh_token", response.data.refresh);
+
   return response.data;
 }
 
