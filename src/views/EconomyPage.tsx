@@ -1,7 +1,9 @@
 import {
+  Autocomplete,
   Badge,
   Button,
   Card,
+  ComboboxPopover,
   Divider,
   Group,
   Input,
@@ -19,8 +21,113 @@ import { IconBuildingBank } from "@tabler/icons-react";
 import ApexChartEconomy from "../components/Graphs/economy/ApexChartEconomy";
 import TableChart3 from "../components/Table/TableChart3";
 import TableChart2 from "../components/Table/TableChart2";
+import { useState, useEffect } from "react";
+import {
+  get_accounts_list,
+  get_categories,
+  get_expense_filtered,
+  get_five_months_list,
+  get_income_filtered,
+  getAllTransactions,
+} from "../services/transactions/transactionsService";
+import type {
+  expenseFilteredResponse,
+  incomeFilteredResponse,
+  Transaction,
+} from "../types/transactions/transactionsType";
+import AllTransactionsTable from "../components/Table/transactions/AllTransactionsTable";
+import { formatCurrency } from "../utils/formatCurrency";
+import { totalBalanceFiltered } from "../services/economy/economyService";
+import type { TotalBalanceResponse } from "../types/dashboard/dashboardType";
+import { calculateNetSaving, percentageNetSaving } from "../utils/netSavings";
 
 const EconomyPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [accountsList, setAccountsList] = useState<string[]>([]);
+  const [monthsList, setMonthsList] = useState<string[]>([]);
+  const [totalTransactions, setTotalTransactions] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [categoriesList, setCategoriesList] = useState<string[]>([]);
+  const [incomeFiltered, setIncomeFiltered] =
+    useState<incomeFilteredResponse>();
+  const [expenseFiltered, setExpenseFiltered] =
+    useState<expenseFilteredResponse>();
+
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null);
+  const [balanceFiltered, setBalanceFiltered] =
+    useState<TotalBalanceResponse>();
+  const [search, setSearch] = useState("");
+  const [ordering, setOrdering] = useState<string>("newest");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedMultiPeriod, setSelectedMultiPeriod] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function fetchFilterData() {
+      setLoading(true);
+      try {
+        const [accounts, months, categories, income, expense, balance] =
+          await Promise.all([
+            get_accounts_list(),
+            get_five_months_list(),
+            get_categories(),
+            get_income_filtered(selectedMultiPeriod, selectedAccount),
+            get_expense_filtered(selectedMultiPeriod, selectedAccount),
+            totalBalanceFiltered(selectedAccount),
+          ]);
+        setCategoriesList(categories.categories_list);
+        setMonthsList(months.last_five_months);
+        setAccountsList(accounts.accounts_list);
+        setIncomeFiltered(income);
+        setExpenseFiltered(expense);
+        setBalanceFiltered(balance);
+      } catch (error) {
+        console.error("Error fetching filter data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFilterData();
+  }, [incomeFiltered, expenseFiltered, balanceFiltered]);
+
+  useEffect(() => {
+    async function fetchTransactions() {
+      setLoading(true);
+
+      try {
+        const transactions = await getAllTransactions(
+          currentPage,
+          selectedCategory,
+          selectedAccount,
+          selectedPeriod,
+          search,
+          ordering,
+          selectedType,
+          selectedMultiPeriod,
+        );
+        setAllTransactions(transactions.results);
+        setTotalTransactions(transactions.count);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTransactions();
+  }, [
+    currentPage,
+    selectedCategory,
+    selectedAccount,
+    selectedPeriod,
+    search,
+    ordering,
+    selectedType,
+    selectedMultiPeriod,
+  ]);
+
   return (
     <Page>
       <Group justify="space-between" align="center" w="100%">
@@ -32,13 +139,27 @@ const EconomyPage = () => {
         </Stack>
 
         <Group gap="sm">
-          <Button
-            variant="default"
-            size="sm"
-            leftSection={<CalendarDays size={14} />}
+          <ComboboxPopover
+            data={monthsList}
+            value={selectedMultiPeriod}
+            onChange={(values: string[]) => {
+              setSelectedMultiPeriod(values);
+              setCurrentPage(1);
+            }}
+            multiple
           >
-            October 2026
-          </Button>
+            <ComboboxPopover.Target>
+              <Button
+                variant="default"
+                size="sm"
+                leftSection={<CalendarDays size={14} />}
+              >
+                {selectedMultiPeriod.length > 0
+                  ? selectedMultiPeriod.join(",")
+                  : "All Periods"}
+              </Button>
+            </ComboboxPopover.Target>
+          </ComboboxPopover>
 
           <Button size="sm" bg="#20765B" leftSection={<Download size={14} />}>
             Export report
@@ -56,13 +177,13 @@ const EconomyPage = () => {
             <Select
               c="green"
               leftSection={<IconBuildingBank size={16} color="#20765B" />}
-              placeholder={"Everyday checking"}
-              data={[
-                "Everyday checking",
-                "Account 2",
-                "Account 3",
-                "Account 4",
-              ]}
+              placeholder={"Accounts"}
+              data={accountsList}
+              value={selectedAccount}
+              onChange={(value) => {
+                setSelectedAccount(value);
+                setCurrentPage(1);
+              }}
               styles={{
                 input: {
                   color: "#20765B",
@@ -72,6 +193,8 @@ const EconomyPage = () => {
                   color: "#20765B",
                 },
               }}
+              clearable
+              nothingFoundMessage="No accounts found"
             />
           </Group>
 
@@ -99,7 +222,7 @@ const EconomyPage = () => {
               Current balance
             </Text>
             <Title c={"white"} order={2} mt="sm">
-              R$ 6,450.00
+              {formatCurrency(balanceFiltered?.total_balance || 0)}
             </Title>
             <Text c="white" size="xs" mt="sm">
               Everyday checking **4821
@@ -113,10 +236,10 @@ const EconomyPage = () => {
               Money in
             </Text>
             <Title order={2} mt="sm">
-              R$ 6,800.00
+              {formatCurrency(incomeFiltered?.total_income || 0)}
             </Title>
-            <Text c="dimmed" size="xs" mt="md">
-              2 income transactions this month
+            <Text c={"dimmed"} size="xs" mt="md">
+              {incomeFiltered?.counted || "Multiple"} income transactions
             </Text>
           </Stack>
         </Card>
@@ -124,13 +247,13 @@ const EconomyPage = () => {
         <Card withBorder radius="md" padding="lg">
           <Stack align="flex-start" gap={0}>
             <Text c="dimmed" size="sm">
-              Money spent
+              Money out
             </Text>
             <Title order={2} mt="sm">
-              R$ 3,240.00
+              {formatCurrency(expenseFiltered?.total_expense || 0)}
             </Title>
-            <Text c="dimmed" size="xs" mt="md">
-              46 payments · 9.5% less than Sep
+            <Text c={"dimmed"} size="xs" mt="md">
+              {expenseFiltered?.counted || "Multiple"} expense transactions
             </Text>
           </Stack>
         </Card>
@@ -141,10 +264,19 @@ const EconomyPage = () => {
               Net cash flow
             </Text>
             <Title order={2} mt="sm">
-              +R$ 3,560.00
+              {calculateNetSaving(
+                Number(incomeFiltered?.total_income),
+                Number(expenseFiltered?.total_expense),
+              )}{" "}
             </Title>
             <Text c="dimmed" size="xs" mt="md">
-              Income minus expenses
+              {Number(incomeFiltered?.total_income) === 0
+                ? 0
+                : percentageNetSaving(
+                    Number(incomeFiltered?.total_income),
+                    Number(expenseFiltered?.total_expense),
+                  )}
+              % of this month's income{" "}
             </Text>
           </Stack>
         </Card>
@@ -246,43 +378,65 @@ const EconomyPage = () => {
           wrap="nowrap"
           gap="md"
         >
-          <Input
+          <Autocomplete
             leftSection={<Search size={16} color="black" />}
             size="md"
             radius="lg"
             placeholder="Search merchant or description"
             style={{ flex: 1 }}
+            data={[]}
+            value={search}
+            onChange={(value) => {
+              setSearch(value);
+              setCurrentPage(1);
+            }}
           />
 
           <Select
-            placeholder="All categories"
-            data={[
-              "Food & groceries",
-              "Salary",
-              "Shopping",
-              "Lifestyle",
-              "Transport",
-            ]}
-            w={200}
+            placeholder="Categories"
+            data={categoriesList}
+            value={selectedCategory}
+            onChange={(value) => {
+              setSelectedCategory(value);
+              setCurrentPage(1);
+            }}
+            clearable
           />
 
           <Select
-            placeholder="Sort"
-            data={["Newest first", "Oldest first"]}
+            placeholder="Sort by"
             w={160}
+            data={[
+              { value: "newest", label: "Newest" },
+              { value: "oldest", label: "Oldest" },
+              { value: "↑ Price", label: "↑ Price" },
+              { value: "↓ Price", label: "↓ Price" },
+            ]}
+            value={ordering}
+            onChange={(value) => {
+              setOrdering(value || "newest");
+              setCurrentPage(1);
+            }}
           />
         </Group>
-        <TableChart2 />
+
+        <AllTransactionsTable data={allTransactions} />
+        <Divider />
 
         <Group mt={30} justify="space-between" align="center">
           <Text c="dimmed" size="xs">
-            Showing 1–10 of 48 transactions
+            Showing {totalTransactions === 0 ? 0 : (currentPage - 1) * 10 + 1}–
+            {Math.min(currentPage * 10, totalTransactions)} of{" "}
+            {totalTransactions} transactions
           </Text>
+
           <Pagination
-            total={5}
+            total={Math.ceil(totalTransactions / 10)}
+            value={currentPage}
+            onChange={setCurrentPage}
             color="#EAF3ED"
             styles={{ control: { color: "#20765B" } }}
-          />{" "}
+          />
         </Group>
       </Card>
 
