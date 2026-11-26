@@ -1,4 +1,5 @@
 import type { TotalBalanceResponse } from "../../types/dashboard/dashboardType";
+import type { expenseCategoriesResponse } from "../../types/economy/economyType";
 import { api } from "../api";
 
 export const totalBalanceFiltered = async (
@@ -9,6 +10,22 @@ export const totalBalanceFiltered = async (
     {
       params: {
         account: account || undefined,
+      },
+    },
+  );
+  return response.data;
+};
+
+export const getFilteredExpenseCategories = async (
+  account?: string | null,
+  periods?: string[],
+): Promise<expenseCategoriesResponse> => {
+  const response = await api.get<expenseCategoriesResponse>(
+    "/api/economy/expense_categories/",
+    {
+      params: {
+        account: account || undefined,
+        periods: periods?.length ? periods.join(",") : undefined,
       },
     },
   );

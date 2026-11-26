@@ -63,12 +63,14 @@ export const get_categories = async (): Promise<categoriesListResponse> => {
 
 export const get_income_filtered = async (
   periods?: string[],
+  account?: string | null,
 ): Promise<incomeFilteredResponse> => {
   const response = await api.get<incomeFilteredResponse>(
     "/api/transactions/income_filtered/",
     {
       params: {
         periods: periods?.length ? periods.join(",") : undefined,
+        account: account || undefined,
       },
     },
   );
@@ -77,12 +79,14 @@ export const get_income_filtered = async (
 
 export const get_expense_filtered = async (
   periods?: string[],
+  account?: string | null,
 ): Promise<expenseFilteredResponse> => {
   const response = await api.get<expenseFilteredResponse>(
     "/api/transactions/expense_filtered/",
     {
       params: {
         periods: periods?.length ? periods.join(",") : undefined,
+        account: account || undefined,
       },
     },
   );

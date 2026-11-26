@@ -14,6 +14,7 @@ import {
   Stack,
   Text,
   Title,
+  Grid,
 } from "@mantine/core";
 import { Page } from "../layout/Page";
 import { CalendarDays, Download, Plus, Search, Sparkles } from "lucide-react";
@@ -37,9 +38,15 @@ import type {
 } from "../types/transactions/transactionsType";
 import AllTransactionsTable from "../components/Table/transactions/AllTransactionsTable";
 import { formatCurrency } from "../utils/formatCurrency";
-import { totalBalanceFiltered } from "../services/economy/economyService";
+import {
+  getFilteredExpenseCategories,
+  totalBalanceFiltered,
+} from "../services/economy/economyService";
 import type { TotalBalanceResponse } from "../types/dashboard/dashboardType";
 import { calculateNetSaving, percentageNetSaving } from "../utils/netSavings";
+import { expenseCategories } from "../services/dashboard/dashboardService";
+import type { expenseCategoriesResponse } from "../types/economy/economyType";
+import { calculateBiggestExpense } from "../utils/expense";
 
 const EconomyPage = () => {
   const [loading, setLoading] = useState(true);
@@ -48,6 +55,10 @@ const EconomyPage = () => {
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
+  const [expenseCategoriesData, setExpenseCategoriesData] =
+    useState<expenseCategoriesResponse>({
+      categories: [],
+    });
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [incomeFiltered, setIncomeFiltered] =
     useState<incomeFilteredResponse>();
@@ -68,21 +79,30 @@ const EconomyPage = () => {
     async function fetchFilterData() {
       setLoading(true);
       try {
-        const [accounts, months, categories, income, expense, balance] =
-          await Promise.all([
-            get_accounts_list(),
-            get_five_months_list(),
-            get_categories(),
-            get_income_filtered(selectedMultiPeriod, selectedAccount),
-            get_expense_filtered(selectedMultiPeriod, selectedAccount),
-            totalBalanceFiltered(selectedAccount),
-          ]);
+        const [
+          accounts,
+          months,
+          categories,
+          income,
+          expense,
+          balance,
+          expenseCategories,
+        ] = await Promise.all([
+          get_accounts_list(),
+          get_five_months_list(),
+          get_categories(),
+          get_income_filtered(selectedMultiPeriod, selectedAccount),
+          get_expense_filtered(selectedMultiPeriod, selectedAccount),
+          totalBalanceFiltered(selectedAccount),
+          getFilteredExpenseCategories(selectedAccount, selectedMultiPeriod),
+        ]);
         setCategoriesList(categories.categories_list);
         setMonthsList(months.last_five_months);
         setAccountsList(accounts.accounts_list);
         setIncomeFiltered(income);
         setExpenseFiltered(expense);
         setBalanceFiltered(balance);
+        setExpenseCategoriesData(expenseCategories);
       } catch (error) {
         console.error("Error fetching filter data:", error);
       } finally {
@@ -91,7 +111,7 @@ const EconomyPage = () => {
     }
 
     fetchFilterData();
-  }, [incomeFiltered, expenseFiltered, balanceFiltered]);
+  }, [incomeFiltered, expenseFiltered, balanceFiltered, expenseCategoriesData]);
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -128,6 +148,14 @@ const EconomyPage = () => {
     selectedMultiPeriod,
   ]);
 
+  useEffect(() => {
+    console.log("All transactions:", allTransactions);
+    console.log("Accounts:", accountsList);
+    console.log("expenseCategories:", expenseCategoriesData);
+  }, [allTransactions, accountsList]);
+
+  const biggestExpense = calculateBiggestExpense(expenseCategoriesData);
+
   return (
     <Page>
       <Group justify="space-between" align="center" w="100%">
@@ -155,7 +183,7 @@ const EconomyPage = () => {
                 leftSection={<CalendarDays size={14} />}
               >
                 {selectedMultiPeriod.length > 0
-                  ? selectedMultiPeriod.join(",")
+                  ? selectedMultiPeriod.join(", ")
                   : "All Periods"}
               </Button>
             </ComboboxPopover.Target>
@@ -210,7 +238,9 @@ const EconomyPage = () => {
               },
             }}
           >
-            Showing only this account
+            {selectedAccount
+              ? `Showing ${selectedAccount}'s account`
+              : "Showing from all accounts"}
           </Badge>
         </Group>
       </Card>
@@ -282,81 +312,130 @@ const EconomyPage = () => {
         </Card>
       </SimpleGrid>
 
-      <SimpleGrid mt={"20"} cols={{ base: 1, sm: 2 }}>
-        <Card mt={20} withBorder radius="md" padding="lg">
-          <Stack mb={15} gap={4} align="flex-start">
-            <Title size={"lg"} order={1}>
-              Where it went
-            </Title>
-            <Text size="xs"> Spending from Everyday checking · Oct 1-23</Text>
-          </Stack>
-          <ApexChartEconomy />
-          <Group justify="flex-start" align="center" gap="sm" wrap="nowrap">
-            <Text
-              bg="#EAF3ED"
-              size="xs"
-              c="dimmed"
-              style={{ borderRadius: 999, padding: "8px 12px" }}
-            >
-              <Sparkles
-                size={16}
-                color="green"
-                style={{ verticalAlign: "middle", marginRight: 8 }}
-              />
-              Home & bills is your biggest expense: $1,400 at Oakwood
-              Apartments, or 43,2% of this account's spending.
-            </Text>
-          </Group>
-        </Card>
+      <Grid mt={20}>
+        {/* Card da esquerda: categorias */}
+        <Grid.Col span={{ base: 12, sm: 7 }}>
+          <Card withBorder radius="md" padding="lg" h="100%">
+            <Group justify="space-between" align="flex-start" mb="md">
+              <Stack gap={4} align="flex-start">
+                <Title size="lg" order={2}>
+                  Where it went
+                </Title>
+                <Text size="xs" c="dimmed">
+                  {selectedAccount ? `${selectedAccount} ` : "All "}
+                  expenses by category
+                </Text>
+              </Stack>
+              <Stack mt={15}>
+                <Text size="xs" c="dimmed">
+                  {expenseCategoriesData.categories.length} categories
+                </Text>
+              </Stack>
+            </Group>
+            <Grid align="center">
+              <Grid.Col span={12}>
+                <ApexChartEconomy
+                  expenseCategoriesData={expenseCategoriesData.categories}
+                />
 
-        <Card mt={20} withBorder radius="md" padding="lg">
-          <Group justify="space-between" align="center">
-            <Title mb={10} size={"lg"}>
-              Top places you spent
-            </Title>
-            <Text size="xs" c={"dimmed"}>
-              This month
-            </Text>
-          </Group>
-          <TableChart3 />
-          <Divider />
+                <Group
+                  justify="flex-start"
+                  align="center"
+                  gap="sm"
+                  wrap="nowrap"
+                  mt={30}
+                >
+                  {biggestExpense && (
+                    <Text
+                      bg="#EAF3ED"
+                      size="xs"
+                      c="dimmed"
+                      style={{ borderRadius: 999, padding: "8px 12px" }}
+                    >
+                      <Sparkles
+                        size={16}
+                        color="green"
+                        style={{ verticalAlign: "middle", marginRight: 8 }}
+                      />
+                      {biggestExpense.category} is your biggest expense:{" "}
+                      {formatCurrency(biggestExpense.total_amount)},
+                      representing {biggestExpense.percentage.toFixed(1)}% of
+                      your total spending.
+                    </Text>
+                  )}
+                </Group>
+              </Grid.Col>
+            </Grid>
+          </Card>
+        </Grid.Col>
 
-          <Group mt={25} justify="space-between" align="center">
-            <Text size={"xs"}>This account's cash flow</Text>
-            <Text size="xs" c={"dimmed"}>
-              +R$3,560.00
-            </Text>
-          </Group>
-          <Progress
-            color="#20765B"
-            mt={10}
-            radius={"lg"}
-            size="md"
-            value={(6800 / (6800 + 3240)) * 100}
-          />
-          <Group mt={10} justify="space-between" align="center">
-            <Text c={"dimmed"} mb={10} size={"xs"}>
-              In R$6,800
-            </Text>
-            <Text size="xs" c={"dimmed"}>
-              Spent R$3,240.00
-            </Text>
-          </Group>
-          <Text mt={10} size="xs" c={"dimmed"}>
-            Opening balance R$2,890 + net flow R$3,560 = current balance
-            R$6,450.
-          </Text>
-        </Card>
-      </SimpleGrid>
+        {/* Card da direita: locais e fluxo */}
+        <Grid.Col span={{ base: 12, sm: 5 }}>
+          <Card withBorder radius="md" padding="lg" h="100%">
+            <Stack gap="md">
+              <Group justify="space-between" align="center">
+                <Title size="lg" order={2}>
+                  Top places you spent
+                </Title>
+
+                <Text size="xs" c="dimmed">
+                  This month
+                </Text>
+              </Group>
+
+              <TableChart3 />
+
+              <Divider />
+
+              <Stack gap={8}>
+                <Group justify="space-between" align="center">
+                  <Text size="xs">This account's cash flow</Text>
+
+                  <Text size="xs" c="dimmed">
+                    +R$3,560.00
+                  </Text>
+                </Group>
+
+                <Progress
+                  color="#20765B"
+                  radius="lg"
+                  size="md"
+                  value={(6800 / (6800 + 3240)) * 100}
+                />
+
+                <Group justify="space-between" align="center">
+                  <Text size="xs" c="dimmed">
+                    In R$6,800
+                  </Text>
+
+                  <Text size="xs" c="dimmed">
+                    Spent R$3,240.00
+                  </Text>
+                </Group>
+              </Stack>
+
+              <Text size="xs" c="dimmed" lh={1.5}>
+                Opening balance R$2,890 + net flow R$3,560 = current balance
+                R$6,450.
+              </Text>
+            </Stack>
+          </Card>
+        </Grid.Col>
+      </Grid>
 
       <Card mt={25} withBorder radius={"md"} padding="lg">
         <Group mt={20} justify="space-between" align="center" w="100%">
           {/* Left side */}
           <Stack gap={4} align="flex-start">
             <Title size={"lg"} order={1}>
-              Account transactions
+              {selectedAccount || "All"} Account Transactions
             </Title>
-            <Text size="xs">Everyday checking **4821 - October 2026</Text>
+            <Text size="xs">
+              Everyday checking **4821 -
+              {selectedMultiPeriod.length > 0
+                ? selectedMultiPeriod.join(", ")
+                : "All Periods"}
+            </Text>
           </Stack>
 
           {/* Right side */}

@@ -63,8 +63,8 @@ const TransactionsPage = () => {
             get_accounts_list(),
             get_five_months_list(),
             get_categories(),
-            get_income_filtered(selectedMultiPeriod),
-            get_expense_filtered(selectedMultiPeriod),
+            get_income_filtered(selectedMultiPeriod, selectedAccount),
+            get_expense_filtered(selectedMultiPeriod, selectedAccount),
           ]);
         setCategoriesList(categories.categories_list);
         setMonthsList(months.last_five_months);
@@ -297,23 +297,24 @@ const TransactionsPage = () => {
             />
 
             <Select
-              placeholder="Period"
-              data={monthsList}
-              value={selectedPeriod}
+              placeholder="Sort by price"
+              data={[
+                { value: "↑ Price", label: "↑ Price" },
+                { value: "↓ Price", label: "↓ Price" },
+              ]}
+              value={ordering}
               onChange={(value) => {
-                setSelectedPeriod(value);
+                setOrdering(value || "↓ Price");
                 setCurrentPage(1);
               }}
               clearable
             />
 
             <Select
-              placeholder="Sort by"
+              placeholder="Sort by date"
               data={[
                 { value: "newest", label: "Newest" },
                 { value: "oldest", label: "Oldest" },
-                { value: "↑ Price", label: "↑ Price" },
-                { value: "↓ Price", label: "↓ Price" },
               ]}
               value={ordering}
               onChange={(value) => {
