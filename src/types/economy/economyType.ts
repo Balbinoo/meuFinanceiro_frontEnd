@@ -8,3 +8,14 @@ export interface ExpenseCategory {
 export interface expenseCategoriesResponse {
   categories: ExpenseCategory[];
 }
+
+export interface TopExpenses {
+  store: string;
+  category: string;
+  total_amount: number;
+  frequency: number;
+}
+
+export interface topExpensesResponse {
+  top_expenses: TopExpenses[];
+}

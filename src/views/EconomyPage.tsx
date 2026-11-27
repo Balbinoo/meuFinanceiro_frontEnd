@@ -17,11 +17,10 @@ import {
   Grid,
 } from "@mantine/core";
 import { Page } from "../layout/Page";
-import { CalendarDays, Download, Plus, Search, Sparkles } from "lucide-react";
+import { CalendarDays, Download, Search, Sparkles } from "lucide-react";
 import { IconBuildingBank } from "@tabler/icons-react";
 import ApexChartEconomy from "../components/Graphs/economy/ApexChartEconomy";
-import TableChart3 from "../components/Table/TableChart3";
-import TableChart2 from "../components/Table/TableChart2";
+import TopExpensesTable from "../components/Table/economy/TopExpensesTable";
 import { useState, useEffect } from "react";
 import {
   get_accounts_list,
@@ -40,13 +39,18 @@ import AllTransactionsTable from "../components/Table/transactions/AllTransactio
 import { formatCurrency } from "../utils/formatCurrency";
 import {
   getFilteredExpenseCategories,
+  getTopExpensesFiltered,
   totalBalanceFiltered,
 } from "../services/economy/economyService";
 import type { TotalBalanceResponse } from "../types/dashboard/dashboardType";
 import { calculateNetSaving, percentageNetSaving } from "../utils/netSavings";
-import { expenseCategories } from "../services/dashboard/dashboardService";
-import type { expenseCategoriesResponse } from "../types/economy/economyType";
+
+import type {
+  topExpensesResponse,
+  expenseCategoriesResponse,
+} from "../types/economy/economyType";
 import { calculateBiggestExpense } from "../utils/expense";
+import { cashFlowIn, cashFlowOut } from "../utils/progress";
 
 const EconomyPage = () => {
   const [loading, setLoading] = useState(true);
@@ -64,6 +68,9 @@ const EconomyPage = () => {
     useState<incomeFilteredResponse>();
   const [expenseFiltered, setExpenseFiltered] =
     useState<expenseFilteredResponse>();
+  const [topExpensesData, setTopExpensesData] = useState<topExpensesResponse>({
+    top_expenses: [],
+  });
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
@@ -87,6 +94,7 @@ const EconomyPage = () => {
           expense,
           balance,
           expenseCategories,
+          topExpenses,
         ] = await Promise.all([
           get_accounts_list(),
           get_five_months_list(),
@@ -95,6 +103,7 @@ const EconomyPage = () => {
           get_expense_filtered(selectedMultiPeriod, selectedAccount),
           totalBalanceFiltered(selectedAccount),
           getFilteredExpenseCategories(selectedAccount, selectedMultiPeriod),
+          getTopExpensesFiltered(selectedAccount, selectedMultiPeriod),
         ]);
         setCategoriesList(categories.categories_list);
         setMonthsList(months.last_five_months);
@@ -103,6 +112,7 @@ const EconomyPage = () => {
         setExpenseFiltered(expense);
         setBalanceFiltered(balance);
         setExpenseCategoriesData(expenseCategories);
+        setTopExpensesData(topExpenses);
       } catch (error) {
         console.error("Error fetching filter data:", error);
       } finally {
@@ -111,7 +121,13 @@ const EconomyPage = () => {
     }
 
     fetchFilterData();
-  }, [incomeFiltered, expenseFiltered, balanceFiltered, expenseCategoriesData]);
+  }, [
+    incomeFiltered,
+    expenseFiltered,
+    balanceFiltered,
+    expenseCategoriesData,
+    topExpensesData,
+  ]);
 
   useEffect(() => {
     async function fetchTransactions() {
@@ -152,6 +168,7 @@ const EconomyPage = () => {
     console.log("All transactions:", allTransactions);
     console.log("Accounts:", accountsList);
     console.log("expenseCategories:", expenseCategoriesData);
+    console.log("topExpenses:", topExpensesData);
   }, [allTransactions, accountsList]);
 
   const biggestExpense = calculateBiggestExpense(expenseCategoriesData);
@@ -379,11 +396,16 @@ const EconomyPage = () => {
                 </Title>
 
                 <Text size="xs" c="dimmed">
-                  This month
+                  {selectedAccount}{" "}
+                  {selectedMultiPeriod.length > 0
+                    ? selectedMultiPeriod.join(", ")
+                    : "at all time"}
                 </Text>
               </Group>
 
-              <TableChart3 />
+              <TopExpensesTable
+                topExpensesData={topExpensesData.top_expenses}
+              />
 
               <Divider />
 
@@ -391,33 +413,68 @@ const EconomyPage = () => {
                 <Group justify="space-between" align="center">
                   <Text size="xs">This account's cash flow</Text>
 
-                  <Text size="xs" c="dimmed">
-                    +R$3,560.00
+                  <Text size="xs" c="#20765B">
+                    +
+                    {calculateNetSaving(
+                      Number(incomeFiltered?.total_income),
+                      Number(expenseFiltered?.total_expense),
+                    )}
                   </Text>
                 </Group>
 
-                <Progress
-                  color="#20765B"
-                  radius="lg"
-                  size="md"
-                  value={(6800 / (6800 + 3240)) * 100}
-                />
+                <Progress.Root radius="lg" size="md">
+                  <Progress.Section
+                    value={cashFlowIn(
+                      Number(incomeFiltered?.total_income ?? 0),
+                      Number(expenseFiltered?.total_expense ?? 0),
+                    )}
+                    color="#20765B"
+                  />
+
+                  <Progress.Section
+                    value={cashFlowOut(
+                      Number(incomeFiltered?.total_income ?? 0),
+                      Number(expenseFiltered?.total_expense ?? 0),
+                    )}
+                    color="#D7C8A8"
+                  />
+                </Progress.Root>
 
                 <Group justify="space-between" align="center">
                   <Text size="xs" c="dimmed">
-                    In R$6,800
+                    In {formatCurrency(incomeFiltered?.total_income || 0)}
                   </Text>
 
                   <Text size="xs" c="dimmed">
-                    Spent R$3,240.00
+                    Spent {formatCurrency(expenseFiltered?.total_expense || 0)}
+                  </Text>
+                </Group>
+
+                <Group
+                  justify="flex-start"
+                  align="center"
+                  gap="sm"
+                  wrap="nowrap"
+                  mt={15}
+                >
+                  <Text size="xs" c="dimmed" fw={300}>
+                    You've spent{" "}
+                    {formatCurrency(expenseFiltered?.total_expense || 0)} of
+                    your {formatCurrency(incomeFiltered?.total_income || 0)}{" "}
+                    income, leaving{" "}
+                    {formatCurrency(
+                      (Number(incomeFiltered?.total_income) || 0) -
+                        (Number(expenseFiltered?.total_expense) || 0),
+                    )}{" "}
+                    (
+                    {percentageNetSaving(
+                      Number(incomeFiltered?.total_income) || 0,
+                      Number(expenseFiltered?.total_expense) || 0,
+                    ) || 0}
+                    % ) available.
                   </Text>
                 </Group>
               </Stack>
-
-              <Text size="xs" c="dimmed" lh={1.5}>
-                Opening balance R$2,890 + net flow R$3,560 = current balance
-                R$6,450.
-              </Text>
             </Stack>
           </Card>
         </Grid.Col>

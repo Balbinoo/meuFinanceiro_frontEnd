@@ -1,16 +1,8 @@
 import { useState } from "react";
 import { Group, Text, Table, Checkbox, Stack, Badge } from "@mantine/core";
-import {
-  IconBook,
-  IconBriefcase,
-  IconCar,
-  IconDeviceLaptop,
-  IconHome,
-  IconMug,
-  IconMusic,
-  IconShoppingBag,
-} from "@tabler/icons-react";
+
 import type { Transaction } from "../../../types/transactions/transactionsType";
+import { getCategoryIcon } from "../../../utils/categories";
 
 interface AllTransactionsTableProps {
   data: Transaction[];
@@ -30,24 +22,6 @@ const formatAmount = (
 
 const formatDate = (date: string) => {
   return new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR");
-};
-
-const getCategoryIcon = (category: string) => {
-  const normalizedCategory = category.toLowerCase();
-
-  if (normalizedCategory.includes("food")) return <IconMug size={18} />;
-  if (normalizedCategory.includes("transport")) return <IconCar size={18} />;
-  if (normalizedCategory.includes("housing")) return <IconHome size={18} />;
-  if (normalizedCategory.includes("education")) return <IconBook size={18} />;
-  if (normalizedCategory.includes("shopping"))
-    return <IconShoppingBag size={18} />;
-  if (normalizedCategory.includes("entertainment"))
-    return <IconMusic size={18} />;
-  if (normalizedCategory.includes("salary")) return <IconBriefcase size={18} />;
-  if (normalizedCategory.includes("freelance"))
-    return <IconDeviceLaptop size={18} />;
-
-  return <IconBriefcase size={18} />;
 };
 
 const AllTransactionsTable = ({ data }: AllTransactionsTableProps) => {
@@ -165,8 +139,26 @@ const AllTransactionsTable = ({ data }: AllTransactionsTableProps) => {
           <Table.Th>Amount</Table.Th>
         </Table.Tr>
       </Table.Thead>
+      <Table.Tbody>
+        {data.length > 0 ? (
+          rows
+        ) : (
+          <Table.Tr>
+            <Table.Td colSpan={6}>
+              <Stack align="center" gap="xs" py="xl">
+                <Text size="sm" fw={500} c="dimmed">
+                  No transactions found
+                </Text>
 
-      <Table.Tbody>{rows}</Table.Tbody>
+                <Text size="xs" c="dimmed" ta="center">
+                  Your transactions will appear here once you register an income
+                  or expense.
+                </Text>
+              </Stack>
+            </Table.Td>
+          </Table.Tr>
+        )}
+      </Table.Tbody>{" "}
     </Table>
   );
 };
