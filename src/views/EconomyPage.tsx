@@ -6,7 +6,6 @@ import {
   ComboboxPopover,
   Divider,
   Group,
-  Input,
   Pagination,
   Progress,
   Select,
@@ -40,7 +39,7 @@ import { formatCurrency } from "../utils/formatCurrency";
 import {
   getFilteredExpenseCategories,
   getTopExpensesFiltered,
-  totalBalanceFiltered,
+  getTotalBalanceFiltered,
 } from "../services/economy/economyService";
 import type { TotalBalanceResponse } from "../types/dashboard/dashboardType";
 import { calculateNetSaving, percentageNetSaving } from "../utils/netSavings";
@@ -101,7 +100,7 @@ const EconomyPage = () => {
           get_categories(),
           get_income_filtered(selectedMultiPeriod, selectedAccount),
           get_expense_filtered(selectedMultiPeriod, selectedAccount),
-          totalBalanceFiltered(selectedAccount),
+          getTotalBalanceFiltered(selectedAccount),
           getFilteredExpenseCategories(selectedAccount, selectedMultiPeriod),
           getTopExpensesFiltered(selectedAccount, selectedMultiPeriod),
         ]);

@@ -5,7 +5,7 @@ import type {
 } from "../../types/economy/economyType";
 import { api } from "../api";
 
-export const totalBalanceFiltered = async (
+export const getTotalBalanceFiltered = async (
   account?: string | null,
 ): Promise<TotalBalanceResponse> => {
   const response = await api.get<TotalBalanceResponse>(

@@ -357,6 +357,7 @@ describe("get_income_filtered", () => {
     expect(api.get).toHaveBeenCalledWith("/api/transactions/income_filtered/", {
       params: {
         periods: undefined,
+        account: undefined,
       },
     });
   });
@@ -370,6 +371,20 @@ describe("get_income_filtered", () => {
     expect(api.get).toHaveBeenCalledWith("/api/transactions/income_filtered/", {
       params: {
         periods: "Jan,Fev,Mar",
+      },
+    });
+  });
+
+  it("deve passar account como parâmetro", async () => {
+    const account = "Banco do Brasil";
+    vi.mocked(api.get).mockResolvedValue({ data: [] });
+
+    await get_income_filtered(undefined, account);
+
+    expect(api.get).toHaveBeenCalledWith("/api/transactions/income_filtered/", {
+      params: {
+        periods: undefined,
+        account: "Banco do Brasil",
       },
     });
   });
@@ -423,6 +438,23 @@ describe("get_expense_filtered", () => {
       {
         params: {
           periods: "Jan,Fev,Mar",
+        },
+      },
+    );
+  });
+
+  it("deve passar os account como parâmetro", async () => {
+    const account = "Banco do Brasil";
+    vi.mocked(api.get).mockResolvedValue({ data: [] });
+
+    await get_expense_filtered(undefined, account);
+
+    expect(api.get).toHaveBeenCalledWith(
+      "/api/transactions/expense_filtered/",
+      {
+        params: {
+          periods: undefined,
+          account: "Banco do Brasil",
         },
       },
     );
